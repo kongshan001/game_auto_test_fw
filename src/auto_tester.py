@@ -47,7 +47,10 @@ class AutoGameTester:
             api_key=api_key or config.GLM_API_KEY,
             model=model or config.GLM_MODEL
         )
-        self.controller = GameController()
+        self.controller = GameController(
+            process_name=config.GAME_PROCESS_NAME or None,
+            window_title=config.GAME_WINDOW_TITLE or None
+        )
         
         self.thinking = thinking if thinking is not None else config.GLM_THINKING
         self.step_count = 0

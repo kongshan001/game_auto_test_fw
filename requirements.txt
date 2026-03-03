@@ -3,20 +3,32 @@
 # 环境变量管理
 python-dotenv>=1.0.0
 
-# 智谱 AI SDK (推荐新版)
+# 智谱 AI SDK
 zai-sdk>=0.2.2
-
-# 旧版 SDK (可选，作为备选)
-# zhipuai>=2.1.5.20250726
 
 # 图像处理
 Pillow>=10.0.0
 
-# 屏幕截图 (Windows)
-# pywin32>=306
-
-# 键鼠模拟
-# pyautogui>=0.9.54
-
 # 通用 HTTP 请求
 requests>=2.31.0
+
+# ==================== Windows 平台 ====================
+
+# Windows 窗口管理（仅 Windows 需要）
+pywin32>=306
+
+# 进程管理（跨平台）
+psutil>=5.9.0
+
+# ==================== Linux 平台 ====================
+
+# Linux 需要安装 xdotool:
+# sudo apt install xdotool
+
+# ==================== 可选依赖 ====================
+
+# 剪贴板（中文输入）
+pyperclip>=1.8.0
+
+# 键鼠模拟（已内置 pyautogui 依赖）
+pyautogui>=0.9.54

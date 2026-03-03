@@ -11,20 +11,17 @@ from pathlib import Path
 # 加载 .env 文件
 try:
     from dotenv import load_dotenv
-    # 优先加载项目目录下的 .env
     env_path = Path(__file__).parent / ".env"
     load_dotenv(env_path)
 except ImportError:
-    pass  # python-dotenv 未安装时使用系统环境变量
+    pass
 
 
 def get_env(key: str, default: str = None) -> str:
-    """获取环境变量"""
     return os.environ.get(key, default or "")
 
 
 def get_env_bool(key: str, default: bool = False) -> bool:
-    """获取布尔型环境变量"""
     val = os.environ.get(key, "").lower()
     if val in ("true", "1", "yes", "on"):
         return True
@@ -34,7 +31,6 @@ def get_env_bool(key: str, default: bool = False) -> bool:
 
 
 def get_env_int(key: str, default: int = 0) -> int:
-    """获取整型环境变量"""
     try:
         return int(os.environ.get(key, default))
     except (ValueError, TypeError):
@@ -45,17 +41,17 @@ def get_env_int(key: str, default: int = 0) -> int:
 
 GLM_API_KEY = get_env("GLM_API_KEY", "YOUR_API_KEY_HERE")
 GLM_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-
-# GLM-4.6V 系列模型
 GLM_MODEL = get_env("GLM_MODEL", "glm-4.6v-flash")
-
-# 深度思考模式
 GLM_THINKING = get_env_bool("GLM_THINKING", True)
 
 # ================== 游戏配置 ==================
 
 GAME_NAME = get_env("GAME_NAME", "YourGame")
 GAME_EXE_PATH = get_env("GAME_EXE_PATH", r"C:\Games\YourGame\game.exe")
+
+# 进程/窗口识别（用于基于进程截图）
+GAME_PROCESS_NAME = get_env("GAME_PROCESS_NAME", "")
+GAME_WINDOW_TITLE = get_env("GAME_WINDOW_TITLE", "")
 
 # ================== 测试账号 ==================
 
@@ -64,22 +60,18 @@ TEST_PASSWORD = get_env("TEST_PASSWORD", "your_password")
 
 # ================== 自动化配置 ==================
 
-# 目录
 BASE_DIR = Path(__file__).parent
 SCREENSHOT_DIR = BASE_DIR / "screenshots"
 LOG_DIR = BASE_DIR / "logs"
 REPORT_DIR = BASE_DIR / "reports"
 
-# 确保目录存在
 for d in [SCREENSHOT_DIR, LOG_DIR, REPORT_DIR]:
     d.mkdir(exist_ok=True)
 
-# 时间配置
 SCREENSHOT_INTERVAL = 0.5
 ACTION_DELAY = 1.0
 GAME_LOAD_WAIT = 10
 
-# 智能决策
 MAX_STEPS = get_env_int("MAX_STEPS", 30)
 DECISION_TIMEOUT = get_env_int("DECISION_TIMEOUT", 60)
 RETRY_TIMES = get_env_int("RETRY_TIMES", 3)

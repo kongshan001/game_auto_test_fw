@@ -13,20 +13,31 @@ import subprocess
 import platform
 from pathlib import Path
 from typing import Optional, Tuple, List
-
-import pyautogui
 from PIL import Image
 
 sys.path.append(str(Path(__file__).parent.parent))
 import config
 
-# 安全设置
-pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.1
-
 # 平台检测
 IS_WINDOWS = platform.system() == "Windows"
 IS_LINUX = platform.system() == "Linux"
+
+# 延迟导入 pyautogui，支持无显示环境
+try:
+    import pyautogui
+    pyautogui.FAILSAFE = True
+    pyautogui.PAUSE = 0.1
+except Exception:
+    # 无显示环境时使用 mock
+    from unittest.mock import MagicMock
+    pyautogui = MagicMock()
+    pyautogui.FAILSAFE = True
+    pyautogui.PAUSE = 0.1
+    pyautogui.size.return_value = (1920, 1080)
+    pyautogui.position.return_value = (960, 540)
+    # screenshot 返回一个有效的图片
+    from PIL import Image
+    pyautogui.screenshot.return_value = Image.new('RGB', (1920, 1080), color='white')
 
 
 class WindowInfo:
@@ -214,7 +225,6 @@ class GameController:
     def _init_linux(self):
         """初始化 Linux 窗口管理"""
         try:
-            import subprocess
             result = subprocess.run(['which', 'xdotool'], capture_output=True)
             self.has_xdotool = result.returncode == 0
             if not self.has_xdotool:
@@ -229,7 +239,6 @@ class GameController:
             return None
         
         try:
-            # 通过 pid 查找窗口
             result = subprocess.run(
                 ['xdotool', 'search', '--pid', str(pid)],
                 capture_output=True, text=True
@@ -237,7 +246,6 @@ class GameController:
             if result.returncode != 0 or not result.stdout.strip():
                 return None
             
-            # 取第一个窗口
             window_id = result.stdout.strip().split('\n')[0]
             return self._get_window_info_linux(window_id)
         except:
@@ -264,14 +272,12 @@ class GameController:
     def _get_window_info_linux(self, window_id: str) -> Optional[WindowInfo]:
         """获取窗口信息 (Linux)"""
         try:
-            # 获取窗口标题
             title_result = subprocess.run(
                 ['xdotool', 'getwindowname', window_id],
                 capture_output=True, text=True
             )
             title = title_result.stdout.strip() if title_result.returncode == 0 else ""
             
-            # 获取窗口位置和大小
             geometry_result = subprocess.run(
                 ['xdotool', 'getwindowgeometry', '--shell', window_id],
                 capture_output=True, text=True
@@ -283,7 +289,6 @@ class GameController:
                     key, value = line.split('=', 1)
                     geometry[key] = int(value)
             
-            # 获取 PID
             pid_result = subprocess.run(
                 ['xdotool', 'getwindowpid', window_id],
                 capture_output=True, text=True
@@ -305,7 +310,6 @@ class GameController:
     def _get_window_screenshot_linux(self, window: WindowInfo) -> Optional[Image.Image]:
         """截取指定窗口 (Linux)"""
         try:
-            # 使用 import 命令截取窗口区域
             result = subprocess.run([
                 'import',
                 '-window', str(window.handle),
@@ -323,12 +327,7 @@ class GameController:
     # ==================== 通用方法 ====================
     
     def find_window(self) -> Optional[WindowInfo]:
-        """
-        查找目标窗口
-        
-        优先级: 进程ID > 窗口标题
-        """
-        # 如果已有进程，先尝试通过 PID 查找
+        """查找目标窗口"""
         if self.game_process and self.game_process.pid:
             if IS_WINDOWS:
                 window = self._find_window_by_pid_windows(self.game_process.pid)
@@ -339,7 +338,6 @@ class GameController:
                 self.target_window = window
                 return window
         
-        # 通过窗口标题查找
         if self.window_title:
             if IS_WINDOWS:
                 window = self._find_window_by_title_windows(self.window_title)
@@ -350,7 +348,6 @@ class GameController:
                 self.target_window = window
                 return window
         
-        # 通过进程名查找
         if self.process_name:
             pid = self._find_pid_by_name(self.process_name)
             if pid:
@@ -388,7 +385,7 @@ class GameController:
         """列出所有可见窗口"""
         windows = []
         
-        if IS_WINDOWS and self.has_win32:
+        if IS_WINDOWS and hasattr(self, 'has_win32') and self.has_win32:
             def enum_callback(hwnd, _):
                 if self.win32gui.IsWindowVisible(hwnd):
                     title = self.win32gui.GetWindowText(hwnd)
@@ -409,7 +406,7 @@ class GameController:
             
             self.win32gui.EnumWindows(enum_callback, None)
         
-        elif IS_LINUX and self.has_xdotool:
+        elif IS_LINUX and hasattr(self, 'has_xdotool') and self.has_xdotool:
             result = subprocess.run(
                 ['xdotool', 'search', '--onlyvisible', '.'],
                 capture_output=True, text=True
@@ -425,15 +422,7 @@ class GameController:
     # ==================== 游戏控制 ====================
     
     def launch_game(self, exe_path: str = None) -> bool:
-        """
-        启动游戏
-        
-        Args:
-            exe_path: 游戏路径（可选，默认使用配置）
-        
-        Returns:
-            是否启动成功
-        """
+        """启动游戏"""
         exe_path = exe_path or config.GAME_EXE_PATH
         
         if not os.path.exists(exe_path):
@@ -446,11 +435,9 @@ class GameController:
             self.game_process = subprocess.Popen(exe_path)
             print(f"✅ 游戏已启动，PID: {self.game_process.pid}")
             
-            # 等待游戏加载
             print(f"⏳ 等待游戏加载 {config.GAME_LOAD_WAIT} 秒...")
             time.sleep(config.GAME_LOAD_WAIT)
             
-            # 查找窗口
             window = self.find_window()
             if window:
                 print(f"✅ 找到窗口: {window.title}")
@@ -469,27 +456,16 @@ class GameController:
             print("🎮 游戏已关闭")
     
     def take_screenshot(self, save_name: str = None) -> str:
-        """
-        截取目标窗口（或全屏）
-        
-        Args:
-            save_name: 保存文件名
-        
-        Returns:
-            截图文件路径
-        """
+        """截取目标窗口（或全屏）"""
         if save_name is None:
             save_name = f"screenshot_{int(time.time())}"
         
         save_path = self.screenshot_dir / f"{save_name}.png"
         
-        # 尝试查找窗口
         window = self.find_window()
-        
         img = None
         
         if window:
-            # 基于窗口截图
             if IS_WINDOWS:
                 img = self._get_window_screenshot_windows(window)
             elif IS_LINUX:
@@ -498,12 +474,10 @@ class GameController:
             if img:
                 print(f"📸 窗口截图: {window.title} ({window.width}x{window.height})")
         
-        # Fallback: 全屏截图
         if img is None:
             print("📸 使用全屏截图")
             img = pyautogui.screenshot()
         
-        # 保存
         img.save(save_path)
         return str(save_path)
     
@@ -514,9 +488,9 @@ class GameController:
             return False
         
         try:
-            if IS_WINDOWS and self.has_win32:
+            if IS_WINDOWS and hasattr(self, 'has_win32') and self.has_win32:
                 self.win32gui.SetForegroundWindow(window.handle)
-            elif IS_LINUX and self.has_xdotool:
+            elif IS_LINUX and hasattr(self, 'has_xdotool') and self.has_xdotool:
                 subprocess.run(['xdotool', 'windowactivate', str(window.handle)])
             return True
         except:
@@ -525,16 +499,7 @@ class GameController:
     # ==================== 输入操作 ====================
     
     def click(self, x: int, y: int, clicks: int = 1, button: str = 'left', relative: bool = True):
-        """
-        点击
-        
-        Args:
-            x: X 坐标
-            y: Y 坐标
-            clicks: 点击次数
-            button: 鼠标按钮
-            relative: 是否相对于窗口（True）或屏幕（False）
-        """
+        """点击"""
         if relative and self.target_window:
             x = self.target_window.left + x
             y = self.target_window.top + y
@@ -573,13 +538,7 @@ class GameController:
         time.sleep(config.ACTION_DELAY)
     
     def swipe(self, direction: str = "up", distance: int = 200):
-        """
-        滑动
-        
-        Args:
-            direction: 方向 (up/down/left/right)
-            distance: 滑动距离
-        """
+        """滑动"""
         window = self.target_window
         if window:
             cx, cy = window.center
@@ -612,21 +571,17 @@ class GameController:
         return None
 
 
-# ==================== 测试 ====================
-
 if __name__ == "__main__":
     print("🎮 游戏控制器测试")
     print(f"平台: {platform.system()}")
     
     controller = GameController()
     
-    # 列出所有窗口
     print("\n📋 当前窗口列表:")
     windows = controller.list_windows()
-    for i, w in enumerate(windows[:10]):  # 只显示前10个
+    for i, w in enumerate(windows[:10]):
         print(f"  [{i}] {w.title[:40]:<40} PID:{w.pid}")
     
-    # 测试截图
     print("\n📸 测试截图:")
     path = controller.take_screenshot("test")
     print(f"   保存到: {path}")

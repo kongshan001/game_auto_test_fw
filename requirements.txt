@@ -1,18 +1,19 @@
-# GLM 游戏自动化测试依赖
+# GLM 智能游戏自动化测试 - 依赖
 
-# GLM SDK
-zhipuai>=2.0.0
-requests>=2.31.0
+# 智谱 AI SDK (推荐新版)
+zai-sdk>=0.2.2
 
-# 屏幕截图和自动化
-pyautogui>=0.9.54
+# 旧版 SDK (可选，作为备选)
+zhipuai>=2.1.5.20250726
+
+# 图像处理
 Pillow>=10.0.0
-mss>=9.0.0
-pyperclip>=1.8.2
 
-# Windows 窗口控制
-pywin32>=306; sys_platform == 'win32'
-pygetwindow>=0.0.9
+# 屏幕截图 (Windows)
+# pywin32>=306
 
-# 工具
-python-dotenv>=1.0.0
+# 键鼠模拟
+# pyautogui>=0.9.54
+
+# 通用 HTTP 请求
+requests>=2.31.0

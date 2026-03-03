@@ -1,44 +1,56 @@
 # -*- coding: utf-8 -*-
 """
 配置文件 - GLM 智能游戏自动化测试
+
+参考文档: https://docs.bigmodel.cn/cn/guide/models/vlm/glm-4.6v
 """
 
-# ================== GLM API 配置 ==================
-# 从环境变量或直接填写
 import os
+from pathlib import Path
+
+# ================== GLM API 配置 ==================
 
 GLM_API_KEY = os.environ.get("GLM_API_KEY", "YOUR_API_KEY_HERE")
 GLM_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
 
-# 多模态模型选择
-# glm-4v-flash: 免费额度，速度快
-# glm-4v: 更强大，收费
-GLM_MODEL = "glm-4v-flash"
+# GLM-4.6V 系列模型选择
+# glm-4.6v: 旗舰版 (106B)，最强视觉理解
+# glm-4.6v-flashx: 轻量高速版 (9B)，速度优先
+# glm-4.6v-flash: 完全免费版，适合测试
+GLM_MODEL = os.environ.get("GLM_MODEL", "glm-4.6v-flash")
+
+# 是否开启深度思考模式
+# 开启后模型会进行更深入的分析，但响应时间稍长
+GLM_THINKING = os.environ.get("GLM_THINKING", "true").lower() == "true"
 
 # ================== 游戏配置 ==================
-GAME_NAME = "YourGame"
-GAME_EXE_PATH = r"C:\Games\YourGame\game.exe"
+
+GAME_NAME = os.environ.get("GAME_NAME", "YourGame")
+GAME_EXE_PATH = os.environ.get("GAME_EXE_PATH", r"C:\Games\YourGame\game.exe")
 
 # ================== 测试账号 ==================
-TEST_ACCOUNT = "your_account"
-TEST_PASSWORD = "your_password"
+
+TEST_ACCOUNT = os.environ.get("TEST_ACCOUNT", "your_account")
+TEST_PASSWORD = os.environ.get("TEST_PASSWORD", "your_password")
 
 # ================== 自动化配置 ==================
+
 # 截图
-SCREENSHOT_DIR = "./screenshots"
-SCREENSHOT_INTERVAL = 0.5
+SCREENSHOT_DIR = Path("./screenshots")
+SCREENSHOT_DIR.mkdir(exist_ok=True)
+SCREENSHOT_INTERVAL = 0.5  # 截图间隔（秒）
 
 # 操作延迟
-ACTION_DELAY = 1.0
-GAME_LOAD_WAIT = 10
+ACTION_DELAY = 1.0  # 操作后等待时间
+GAME_LOAD_WAIT = 10  # 游戏启动等待时间
 
 # 智能决策
-MAX_STEPS = 30          # 最大步数
-DECISION_TIMEOUT = 30   # 决策超时（秒）
-RETRY_TIMES = 3         # 失败重试次数
+MAX_STEPS = 30  # 单次测试最大步数
+DECISION_TIMEOUT = 60  # 单次决策超时（秒）
+RETRY_TIMES = 3  # 失败重试次数
 
 # ================== 测试目标 ==================
-# 自动化测试的目标描述
+
 TEST_GOALS = {
     "initial": "启动游戏并登录",
     "steps": [
@@ -52,5 +64,13 @@ TEST_GOALS = {
 }
 
 # ================== 日志配置 ==================
-LOG_LEVEL = "INFO"
-LOG_FILE = "./logs/test.log"
+
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+LOG_DIR = Path("./logs")
+LOG_DIR.mkdir(exist_ok=True)
+LOG_FILE = LOG_DIR / "test.log"
+
+# ================== 报告配置 ==================
+
+REPORT_DIR = Path("./reports")
+REPORT_DIR.mkdir(exist_ok=True)

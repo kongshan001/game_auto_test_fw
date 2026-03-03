@@ -1,0 +1,18 @@
+# GLM 游戏自动化测试依赖
+
+# GLM SDK
+zhipuai>=2.0.0
+requests>=2.31.0
+
+# 屏幕截图和自动化
+pyautogui>=0.9.54
+Pillow>=10.0.0
+mss>=9.0.0
+pyperclip>=1.8.2
+
+# Windows 窗口控制
+pywin32>=306; sys_platform == 'win32'
+pygetwindow>=0.0.9
+
+# 工具
+python-dotenv>=1.0.0
